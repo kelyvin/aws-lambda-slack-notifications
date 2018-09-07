@@ -17,3 +17,8 @@ The following is a list of all supported slack notifications (with formatted ale
 
 - [x] ECS Task State Change
 - [x] Cloudwatch Alert Monitoring
+
+
+## TODO:
+- [ ] Add build job that will auto package and upload to s3 and update the lambda function directly
+- [ ] Improve README
