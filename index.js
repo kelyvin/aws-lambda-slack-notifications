@@ -41,75 +41,75 @@
 
  */
 
-const AWS = require('aws-sdk');
-const url = require('url');
-const https = require('https');
+const AWS = require('aws-sdk')
+const url = require('url')
+const https = require('https')
 
-const notificationTypes = require('./configs/notificationTypes');
-const cloudwatchAlertHandler = require('./handlers/cloudwatchAlertHandler');
-const ecsTaskHandler = require('./handlers/cloudwatchAlertHandler');
-const defaultHandler = require('./handlers/defaultHandler');
+const notificationTypes = require('./configs/notificationTypes')
+const cloudwatchAlertHandler = require('./handlers/cloudwatchAlertHandler')
+const ecsTaskHandler = require('./handlers/cloudwatchAlertHandler')
+const defaultHandler = require('./handlers/defaultHandler')
 
 // The base-64 encoded, encrypted key (CiphertextBlob) stored in the kmsEncryptedHookUrl environment variable
-const kmsEncryptedHookUrl = process.env.kmsEncryptedHookUrl;
+const kmsEncryptedHookUrl = process.env.kmsEncryptedHookUrl
 // If you don't want to encrypt your hook url, use this instead
-const unencryptedHookUrl = process.env.unencryptedHookUrl;
+const unencryptedHookUrl = process.env.unencryptedHookUrl
 // The Slack channel to send a message to stored in the slackChannel environment variable
-const slackChannel = process.env.slackChannel;
-let hookUrl;
+const slackChannel = process.env.slackChannel
+let hookUrl
 
 const DEFAULT_SLACK_MSG = {
   channel: slackChannel
-};
+}
 
 function postMessage(message, callback) {
-  const body = JSON.stringify(message);
-  const options = url.parse(hookUrl);
-  options.method = 'POST';
+  const body = JSON.stringify(message)
+  const options = url.parse(hookUrl)
+  options.method = 'POST'
   options.headers = {
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(body),
-  };
+  }
 
   const postReq = https.request(options, (res) => {
-    const chunks = [];
-    res.setEncoding('utf8');
-    res.on('data', (chunk) => chunks.push(chunk));
+    const chunks = []
+    res.setEncoding('utf8')
+    res.on('data', (chunk) => chunks.push(chunk))
     res.on('end', () => {
       if (callback) {
         callback({
           body: chunks.join(''),
           statusCode: res.statusCode,
           statusMessage: res.statusMessage,
-        });
+        })
       }
-    });
-    return res;
-  });
+    })
+    return res
+  })
 
-  postReq.write(body);
-  postReq.end();
+  postReq.write(body)
+  postReq.end()
 }
 
 function createSlackMessage (event) {
-  const eventSubscriptionArn = event.Records[0].EventSubscriptionArn;
-  const eventSnsSubject = event.Records[0].Sns.Subject || '';
-  const eventSnsTopicArn = event.Records[0].Sns.TopicArn;
-  const eventSnsMessage = event.Records[0].Sns.Message;
+  const eventSubscriptionArn = event.Records[0].EventSubscriptionArn
+  const eventSnsSubject = event.Records[0].Sns.Subject || ''
+  const eventSnsTopicArn = event.Records[0].Sns.TopicArn
+  const eventSnsMessage = event.Records[0].Sns.Message
 
   const cloudwatchType = notificationTypes.CLOUDWATCH_NOTIFICATIONS
   const ecsType = notificationTypes.ECS_NOTIFICATIONS
 
-  let slackMessage = null;
+  let slackMessage = null
 
   if (eventSubscriptionArn.indexOf(cloudwatchType) > -1 || eventSnsSubject.indexOf(cloudwatchType) > -1 || eventSnsMessage.indexOf(cloudwatchType) > -1) {
-    console.log('Processing cloudwatch notification');
-    slackMessage = cloudwatchAlertHandler(event);
+    console.log('Processing cloudwatch notification')
+    slackMessage = cloudwatchAlertHandler(event)
   } else if (eventSubscriptionArn.indexOf(ecsType) > -1 || eventSnsTopicArn.indexOf(ecsType) > -1 || eventSnsMessage.indexOf(ecsType) > -1) {
-    console.log('Processing ecs event');
-    slackMessage = ecsTaskHandler(event);
+    console.log('Processing ecs event')
+    slackMessage = ecsTaskHandler(event)
   } else {
-    slackMessage = defaultHandler(event);
+    slackMessage = defaultHandler(event)
   }
 
   return {
@@ -119,46 +119,46 @@ function createSlackMessage (event) {
 }
 
 function processEvent(event, callback) {
-  const slackMessage = createSlackMessage(event);
+  const slackMessage = createSlackMessage(event)
 
   postMessage(slackMessage, (response) => {
     if (response.statusCode < 400) {
-      console.info('Message posted successfully');
-      callback(null);
+      console.info('Message posted successfully')
+      callback(null)
     } else if (response.statusCode < 500) {
-      console.error(`Error posting message to Slack API: ${response.statusCode} - ${response.statusMessage}`);
-      callback(null); // Don't retry because the error is due to a problem with the request
+      console.error(`Error posting message to Slack API: ${response.statusCode} - ${response.statusMessage}`)
+      callback(null) // Don't retry because the error is due to a problem with the request
     } else {
       // Let Lambda retry
-      callback(`Server error when processing message: ${response.statusCode} - ${response.statusMessage}`);
+      callback(`Server error when processing message: ${response.statusCode} - ${response.statusMessage}`)
     }
-  });
+  })
 }
 
 
 exports.handler = (event, context, callback) => {
   if (hookUrl) {
     // Container reuse, simply process the event with the key in memory
-    processEvent(event, callback);
+    processEvent(event, callback)
   } else if (unencryptedHookUrl) {
-    hookUrl = unencryptedHookUrl;
-    processEvent(event, callback);
+    hookUrl = unencryptedHookUrl
+    processEvent(event, callback)
   } else if (kmsEncryptedHookUrl && kmsEncryptedHookUrl !== '<kmsEncryptedHookUrl>') {
-    const encryptedBuf = new Buffer(kmsEncryptedHookUrl, 'base64');
+    const encryptedBuf = new Buffer(kmsEncryptedHookUrl, 'base64')
     const cipherText = {
       CiphertextBlob: encryptedBuf
-    };
+    }
 
-    const kms = new AWS.KMS();
+    const kms = new AWS.KMS()
     kms.decrypt(cipherText, (err, data) => {
       if (err) {
-        console.log('Decrypt error:', err);
-        return callback(err);
+        console.log('Decrypt error:', err)
+        return callback(err)
       }
-      hookUrl = `https://${data.Plaintext.toString('ascii')}`;
-      processEvent(event, callback);
-    });
+      hookUrl = `https://${data.Plaintext.toString('ascii')}`
+      processEvent(event, callback)
+    })
   } else {
-    callback('Hook URL has not been set.');
+    callback('Hook URL has not been set.')
   }
-};
+}

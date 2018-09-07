@@ -1,26 +1,26 @@
 module.exports = (event) => {
-  const timestamp = (new Date(event.Records[0].Sns.Timestamp)).getTime() / 1000;
-  const message = JSON.parse(event.Records[0].Sns.Message);
-  const region = event.Records[0].EventSubscriptionArn.split(":")[3];
-  const subject = 'AWS CloudWatch Notification';
-  const alarmName = message.AlarmName;
-  const metricName = message.Trigger.MetricName;
-  const oldState = message.OldStateValue;
-  const newState = message.NewStateValue;
-  const alarmDescription = message.AlarmDescription;
-  const alarmReason = message.NewStateReason;
-  const trigger = message.Trigger;
-  let color = 'warning';
+  const timestamp = (new Date(event.Records[0].Sns.Timestamp)).getTime() / 1000
+  const message = JSON.parse(event.Records[0].Sns.Message)
+  const region = event.Records[0].EventSubscriptionArn.split(":")[3]
+  const subject = 'AWS CloudWatch Notification'
+  const alarmName = message.AlarmName
+  const metricName = message.Trigger.MetricName
+  const oldState = message.OldStateValue
+  const newState = message.NewStateValue
+  const alarmDescription = message.AlarmDescription
+  const alarmReason = message.NewStateReason
+  const trigger = message.Trigger
+  let color = 'warning'
 
   switch (newState) {
     case 'ALARM':
-      color = 'danger';
-      break;
+      color = 'danger'
+      break
     case 'OK':
-      color = 'good';
-      break;
+      color = 'good'
+      break
     default:
-      color = 'warning';
+      color = 'warning'
   }
 
   return {
@@ -59,12 +59,12 @@ module.exports = (event) => {
         },
         {
           'title': 'Link to Alarm',
-          'value': `https://console.aws.amazon.com/cloudwatch/home?region=${region}#alarm:alarmFilter=ANY;name=${encodeURIComponent(alarmName)}`,
+          'value': `https://console.aws.amazon.com/cloudwatch/home?region=${region}#alarm:alarmFilter=ANYname=${encodeURIComponent(alarmName)}`,
           'short': false
         }
       ],
       'ts': timestamp
     }]
-  };
+  }
 }
 
