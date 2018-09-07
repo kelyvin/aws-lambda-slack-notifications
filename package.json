@@ -1,6 +1,6 @@
 {
   "name": "lambda-slack-notifications",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Slack notifications on AWS Lambda, SNS, and Cloudwatch",
   "main": "index.js",
   "directories": {
@@ -24,10 +24,21 @@
     "slack",
     "aws-slack"
   ],
+  "engines": {
+    "node": ">=8.9.4"
+  },
   "author": "Kelvin Nguyen",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kelyvin/aws-lambda-slack-notifications/issues"
   },
-  "homepage": "https://github.com/kelyvin/aws-lambda-slack-notifications#readme"
+  "homepage": "https://github.com/kelyvin/aws-lambda-slack-notifications#readme",
+  "dependencies": {
+    "aws-sdk": "^2.310.0",
+    "https": "^1.0.0",
+    "url": "^0.11.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.5.0"
+  }
 }

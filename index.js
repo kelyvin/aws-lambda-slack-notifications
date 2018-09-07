@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Follow these steps to configure the webhook in Slack:
  *
@@ -47,6 +45,11 @@ const AWS = require('aws-sdk');
 const url = require('url');
 const https = require('https');
 
+const notificationTypes = require('./configs/notificationTypes');
+const cloudwatchAlertHandler = require('./handlers/cloudwatchAlertHandler');
+const ecsTaskHandler = require('./handlers/cloudwatchAlertHandler');
+const defaultHandler = require('./handlers/defaultHandler');
+
 // The base-64 encoded, encrypted key (CiphertextBlob) stored in the kmsEncryptedHookUrl environment variable
 const kmsEncryptedHookUrl = process.env.kmsEncryptedHookUrl;
 // If you don't want to encrypt your hook url, use this instead
@@ -55,8 +58,6 @@ const unencryptedHookUrl = process.env.unencryptedHookUrl;
 const slackChannel = process.env.slackChannel;
 let hookUrl;
 
-const CLOUDWATCH_NOTIFICATIONS = 'CloudWatchNotifications';
-const ECS_NOTIFICATIONS = 'ecs';
 const DEFAULT_SLACK_MSG = {
   channel: slackChannel
 };
@@ -90,226 +91,35 @@ function postMessage(message, callback) {
   postReq.end();
 }
 
-function handleEcsTaskNotification (event) {
-  const record = event.Records[0];
-  const timestamp = (new Date(record.Sns.Timestamp)).getTime() / 1000;
-  const message = JSON.parse(record.Sns.Message);
-  const subject = message['detail-type'];
-  const region = message.region;
-  const detail = message.detail;
-  const clusterName = detail.clusterArn.split('/').pop();  // arn:aws:ecs:us-west-2:example:cluster/example-cluster
-  const serviceName = detail.group.split(":").pop();  // service:example-service
-  const taskDefinition = detail.taskDefinitionArn.split("/").pop();
-  const status = detail.lastStatus;
-  const startedBy = detail.startedBy;
-  const link = `https://${region}.console.aws.amazon.com/ecs/home?region=${region}#/clusters/${clusterName}/services/${serviceName}/tasks`;
-
-  let color = 'warning';
-
-  switch (status) {
-    case 'STOPPED':
-      color = 'danger';
-      break;
-    case 'RUNNING':
-      color = 'good';
-      break;
-    case 'PENDING':
-    default:
-      color = 'warning';
-  }
-
-  const slackMessage = {
-    text: `*${subject}*`,
-    attachments: [{
-      'color': color,
-      'fields': [{
-          'title': 'Cluster',
-          'value': clusterName,
-          'short': true
-        },
-        {
-          'title': 'Service',
-          'value': serviceName,
-          'short': true
-        },
-        {
-          'title': 'Task Definition',
-          'value': taskDefinition,
-          'short': true
-        },
-        {
-          'title': 'Status',
-          'value': status,
-          'short': true
-        },
-        {
-          'title': 'Started By',
-          'value': startedBy,
-          'short': true
-        },
-        {
-          'title': 'Link to Task',
-          'value': link,
-          'short': false
-        }
-      ],
-      'ts': timestamp
-    }]
-  };
-
-  return {
-    ...DEFAULT_SLACK_MSG,
-    ...slackMessage
-  };
-}
-
-function handleCloudWatch (event) {
-  const timestamp = (new Date(event.Records[0].Sns.Timestamp)).getTime() / 1000;
-  const message = JSON.parse(event.Records[0].Sns.Message);
-  const region = event.Records[0].EventSubscriptionArn.split(":")[3];
-  const subject = 'AWS CloudWatch Notification';
-  const alarmName = message.AlarmName;
-  const metricName = message.Trigger.MetricName;
-  const oldState = message.OldStateValue;
-  const newState = message.NewStateValue;
-  const alarmDescription = message.AlarmDescription;
-  const alarmReason = message.NewStateReason;
-  const trigger = message.Trigger;
-  let color = 'warning';
-
-  switch (newState) {
-    case 'ALARM':
-      color = 'danger';
-      break;
-    case 'OK':
-      color = 'good';
-      break;
-    default:
-      color = 'warning';
-  }
-
-  const slackMessage = {
-    text: `*${subject}*`,
-    attachments: [{
-      'color': color,
-      'fields': [{
-          'title': 'Alarm Name',
-          'value': alarmName,
-          'short': true
-        },
-        {
-          'title': 'Alarm Description',
-          'value': alarmDescription,
-          'short': false
-        },
-        {
-          'title': 'Alarm Reason',
-          'value': alarmReason,
-          'short': false
-        },
-        {
-          'title': 'Trigger',
-          'value': `${trigger.Statistic} ${metricName} ${trigger.ComparisonOperator} ${trigger.Threshold} for ${trigger.EvaluationPeriods} period(s) of ${trigger.Period} seconds.`,
-          'short': false
-        },
-        {
-          'title': 'Old State',
-          'value': oldState,
-          'short': true
-        },
-        {
-          'title': 'Current State',
-          'value': newState,
-          'short': true
-        },
-        {
-          'title': 'Link to Alarm',
-          'value': `https://console.aws.amazon.com/cloudwatch/home?region=${region}#alarm:alarmFilter=ANY;name=${encodeURIComponent(alarmName)}`,
-          'short': false
-        }
-      ],
-      'ts': timestamp
-    }]
-  };
-
-  return {
-    ...DEFAULT_SLACK_MSG,
-    ...slackMessage
-  };
-}
-
-function handleCatchAll (event) {
-  const record = event.Records[0];
-  const subject = record.Sns.Subject;
-  const timestamp = new Date(record.Sns.Timestamp).getTime() / 1000;
-  const message = record.Sns.Message;
-  const newState = message.NewStateValue;
-  let color = 'warning';
-
-  switch (newState) {
-    case 'ALARM':
-      color = 'danger';
-      break;
-    case 'OK':
-      color = 'good';
-      break;
-    default:
-      color = 'warning';
-  }
-
-  // Add all of the values from the event message to the Slack message description
-  let description = '';
-
-  for (let key in message) {
-    let renderedMessage = typeof message[key] === 'object' ?
-      JSON.stringify(message[key]) :
-      message[key];
-
-    description = `${description}\n${key}: ${renderedMessage}`;
-  }
-
-  const slackMessage = {
-    text: `*${subject}*`,
-    attachments: [{
-      'color': color,
-      'fields': [{
-          'title': 'Message',
-          'value': subject,
-          'short': false
-        },
-        {
-          'title': 'Description',
-          'value': description,
-          'short': false
-        }
-      ],
-      'ts': timestamp
-    }]
-  };
-
-  return {
-    ...DEFAULT_SLACK_MSG,
-    ...slackMessage
-  };
-}
-
-
-function processEvent(event, callback) {
+function createSlackMessage (event) {
   const eventSubscriptionArn = event.Records[0].EventSubscriptionArn;
-  const eventSnsSubject = event.Records[0].Sns.Subject || 'no subject';
+  const eventSnsSubject = event.Records[0].Sns.Subject || '';
   const eventSnsTopicArn = event.Records[0].Sns.TopicArn;
   const eventSnsMessage = event.Records[0].Sns.Message;
 
+  const cloudwatchType = notificationTypes.CLOUDWATCH_NOTIFICATIONS
+  const ecsType = notificationTypes.ECS_NOTIFICATIONS
+
   let slackMessage = null;
 
-  if (eventSubscriptionArn.indexOf(CLOUDWATCH_NOTIFICATIONS) > -1 || eventSnsSubject.indexOf(CLOUDWATCH_NOTIFICATIONS) > -1 || eventSnsMessage.indexOf(CLOUDWATCH_NOTIFICATIONS) > -1) {
+  if (eventSubscriptionArn.indexOf(cloudwatchType) > -1 || eventSnsSubject.indexOf(cloudwatchType) > -1 || eventSnsMessage.indexOf(cloudwatchType) > -1) {
     console.log('Processing cloudwatch notification');
-    slackMessage = handleCloudWatch(event);
-  } else if (eventSubscriptionArn.indexOf(ECS_NOTIFICATIONS) > -1 || eventSnsTopicArn.indexOf(ECS_NOTIFICATIONS) > -1 || eventSnsMessage.indexOf(ECS_NOTIFICATIONS) > -1) {
-    slackMessage = handleEcsTaskNotification(event);
+    slackMessage = cloudwatchAlertHandler(event);
+  } else if (eventSubscriptionArn.indexOf(ecsType) > -1 || eventSnsTopicArn.indexOf(ecsType) > -1 || eventSnsMessage.indexOf(ecsType) > -1) {
+    console.log('Processing ecs event');
+    slackMessage = ecsTaskHandler(event);
   } else {
-    slackMessage = handleCatchAll(event);
+    slackMessage = defaultHandler(event);
   }
+
+  return {
+    ...DEFAULT_SLACK_MSG,
+    ...slackMessage
+  }
+}
+
+function processEvent(event, callback) {
+  const slackMessage = createSlackMessage(event);
 
   postMessage(slackMessage, (response) => {
     if (response.statusCode < 400) {
