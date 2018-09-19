@@ -47,7 +47,7 @@ const https = require('https')
 
 const notificationTypes = require('./configs/notificationTypes')
 const cloudwatchAlertHandler = require('./handlers/cloudwatchAlertHandler')
-const ecsTaskHandler = require('./handlers/cloudwatchAlertHandler')
+const ecsTaskHandler = require('./handlers/ecsTaskHandler')
 const defaultHandler = require('./handlers/defaultHandler')
 
 // The base-64 encoded, encrypted key (CiphertextBlob) stored in the kmsEncryptedHookUrl environment variable
