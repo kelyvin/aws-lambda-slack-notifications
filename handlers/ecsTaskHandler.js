@@ -7,7 +7,7 @@ module.exports = (event) => {
   const detail = message.detail
   const clusterName = detail.clusterArn.split('/').pop()  // arn:aws:ecs:us-west-2:example:cluster/example-cluster
   const serviceName = detail.group.split(":").pop()  // service:example-service
-  const taskDefinition = detail.taskDefinitionArn.split("/").pop()
+  const task = detail.taskArn.split("/").pop()
   const status = detail.lastStatus
   const startedBy = detail.startedBy
   const link = `https://${region}.console.aws.amazon.com/ecs/home?region=${region}#/clusters/${clusterName}/services/${serviceName}/tasks`
@@ -41,11 +41,6 @@ module.exports = (event) => {
           'short': true
         },
         {
-          'title': 'Task Definition',
-          'value': taskDefinition,
-          'short': true
-        },
-        {
           'title': 'Status',
           'value': status,
           'short': true
@@ -54,6 +49,11 @@ module.exports = (event) => {
           'title': 'Started By',
           'value': startedBy,
           'short': true
+        },
+        {
+          'title': 'Task',
+          'value': task,
+          'short': false
         },
         {
           'title': 'Link to Task',
