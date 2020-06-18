@@ -45,8 +45,8 @@ const AWS = require('aws-sdk')
 const url = require('url')
 const https = require('https')
 
-const notificationTypes = require('./configs/notificationTypes')
-const cloudwatchAlertHandler = require('./handlers/cloudwatchAlertHandler')
+const notificationSources = require('./configs/notificationSources')
+const scheduledEventHandler = require('./handlers/scheduledEventHandler')
 const ecsTaskHandler = require('./handlers/ecsTaskHandler')
 const defaultHandler = require('./handlers/defaultHandler')
 
@@ -56,7 +56,7 @@ const kmsEncryptedHookUrl = process.env.kmsEncryptedHookUrl
 const unencryptedHookUrl = process.env.unencryptedHookUrl
 // The Slack channel to send a message to stored in the slackChannel environment variable
 const slackChannel = process.env.slackChannel
-let hookUrl
+let hookUrl = ''
 
 const DEFAULT_SLACK_MSG = {
   channel: slackChannel
@@ -92,24 +92,30 @@ function postMessage(message, callback) {
 }
 
 function createSlackMessage (event) {
-  const eventSubscriptionArn = event.Records[0].EventSubscriptionArn
-  const eventSnsSubject = event.Records[0].Sns.Subject || ''
-  const eventSnsTopicArn = event.Records[0].Sns.TopicArn
-  const eventSnsMessage = event.Records[0].Sns.Message
+  const record = event.Records[0]
+  console.info('SNS Event Data', JSON.stringify(record, null, 2))
 
-  const cloudwatchType = notificationTypes.CLOUDWATCH_NOTIFICATIONS
-  const ecsType = notificationTypes.ECS_NOTIFICATIONS
+  // The message always comes in as a JSON string
+  const timestamp = (new Date(record.Sns.Timestamp)).getTime() / 1000
+  const snsMessage = JSON.parse(record.Sns.Message)
+  const eventSource = snsMessage['source']
 
+  const ecsSource = notificationSources.ECS
+  const scheduledEventSource = notificationSources.SCHEDULED_EVENT
   let slackMessage = null
 
-  if (eventSubscriptionArn.indexOf(cloudwatchType) > -1 || eventSnsSubject.indexOf(cloudwatchType) > -1 || eventSnsMessage.indexOf(cloudwatchType) > -1) {
-    console.log('Processing cloudwatch notification')
-    slackMessage = cloudwatchAlertHandler(event)
-  } else if (eventSubscriptionArn.indexOf(ecsType) > -1 || eventSnsTopicArn.indexOf(ecsType) > -1 || eventSnsMessage.indexOf(ecsType) > -1) {
-    console.log('Processing ecs event')
-    slackMessage = ecsTaskHandler(event)
-  } else {
-    slackMessage = defaultHandler(event)
+  switch (eventSource) {
+    case ecsSource:
+      console.log('Processing ecs event')
+      slackMessage = ecsTaskHandler(snsMessage, timestamp)
+      break
+    case scheduledEventSource:
+      console.log('Processing scheduled event')
+      slackMessage = scheduledEventHandler(eventRecord, timestamp)
+      breal
+    default:
+      console.log('Processing default message event')
+      slackMessage = defaultHandler(eventRecord, timestamp)
   }
 
   return {
@@ -138,7 +144,6 @@ function processEvent(event, callback) {
 
 exports.handler = (event, context, callback) => {
   if (hookUrl) {
-    // Container reuse, simply process the event with the key in memory
     processEvent(event, callback)
   } else if (unencryptedHookUrl) {
     hookUrl = unencryptedHookUrl

@@ -1,0 +1,15 @@
+{
+  "version": "0",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "detail-type": "Scheduled Event",
+  "source": "aws.events",
+  "account": "example",
+  "time": "2018-09-06T08:02:58Z",
+  "region": "us-west-2",
+  "resources": [ "arn:aws:events:us-west-2:example:rule/example-rule-name" ],
+  "detail": {
+    "env": "staging",
+    "name": "This is a custom scheduled event",
+    "lambdaName": "lambda/path/function"
+  }
+}

@@ -1,10 +1,6 @@
-module.exports = (event) => {
-  const record = event.Records[0]
-  const timestamp = (new Date(record.Sns.Timestamp)).getTime() / 1000
-  const message = JSON.parse(record.Sns.Message)
-  const subject = message['detail-type']
-  const region = message.region
-  const detail = message.detail
+module.exports = (snsMessage, timestamp) => {
+  const { region, detail } = snsMessage
+  const subject = snsMessage['detail-type']
   const clusterName = detail.clusterArn.split('/').pop()  // arn:aws:ecs:us-west-2:example:cluster/example-cluster
   const serviceName = detail.group.split(":").pop()  // service:example-service
   const task = detail.taskArn.split("/").pop()
