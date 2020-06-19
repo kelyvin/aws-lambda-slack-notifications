@@ -5,7 +5,7 @@ module.exports = (snsMessage, timestamp) => {
   const ruleName = eventArn.split('/').pop
   let color = 'good'
 
-  if (Object.keys(detail) === 0) {
+  if (Object.keys(detail).length === 0) {
     return {
       text: `*${subject}*`,
       attachments: [{
@@ -20,8 +20,8 @@ module.exports = (snsMessage, timestamp) => {
     }
   }
 
-  const { name = '', env = '', lambdaName = '' } = detail
-  const link = `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${lambdaName}`
+  const { name = '', env = '', lambdaFuncName = ''. logGroup = '' } = detail
+  const link = `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${logGroup}`
 
   return {
     text: `*${subject}*`,
@@ -30,17 +30,21 @@ module.exports = (snsMessage, timestamp) => {
       'fields': [{
         'title': 'Event Name',
         'value': name,
-        'short': false
-      },{
-        'title': 'Couldwatch Rule',
-        'value': ruleName,
         'short': true
       }, {
         'title': 'Environment',
         'value': env,
         'short': true
       }, {
-        'title': 'Link',
+        'title': 'Lambda Function',
+        'value': lambdaFuncName,
+        'short': true
+      }, {
+        'title': 'Clouldwatch Rule',
+        'value': ruleName,
+        'short': true
+      }, {
+        'title': 'Log group',
         'value': link,
         'short': false
       }],

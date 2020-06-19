@@ -1,15 +1,10 @@
-module.exports = (event) => {
-  const timestamp = (new Date(event.Records[0].Sns.Timestamp)).getTime() / 1000
-  const message = JSON.parse(event.Records[0].Sns.Message)
-  const region = event.Records[0].EventSubscriptionArn.split(":")[3]
-  const subject = 'AWS CloudWatch Notification'
-  const alarmName = message.AlarmName
-  const metricName = message.Trigger.MetricName
-  const oldState = message.OldStateValue
-  const newState = message.NewStateValue
-  const alarmDescription = message.AlarmDescription
-  const alarmReason = message.NewStateReason
-  const trigger = message.Trigger
+module.exports = (snsMessage, timestamp) => {
+  const region = snsMessage.TopicArn.split(":")[3]
+  const subject = snsMessage.Subject
+  const alarmName = snsMessage.AlarmName
+  const newState = snsMessage.NewStateValue
+  const alarmDescription = snsMessage.AlarmDescription
+  const alarmReason = snsMessage.NewStateReason
   let color = 'warning'
 
   switch (newState) {
@@ -33,29 +28,14 @@ module.exports = (event) => {
           'short': true
         },
         {
-          'title': 'Alarm Description',
-          'value': alarmDescription,
-          'short': false
-        },
-        {
-          'title': 'Alarm Reason',
-          'value': alarmReason,
-          'short': false
-        },
-        {
-          'title': 'Trigger',
-          'value': `${trigger.Statistic} ${metricName} ${trigger.ComparisonOperator} ${trigger.Threshold} for ${trigger.EvaluationPeriods} period(s) of ${trigger.Period} seconds.`,
-          'short': false
-        },
-        {
-          'title': 'Old State',
-          'value': oldState,
-          'short': true
-        },
-        {
           'title': 'Current State',
           'value': newState,
           'short': true
+        },
+        {
+          'title': 'Alarm Description',
+          'value': alarmDescription,
+          'short': false
         },
         {
           'title': 'Link to Alarm',

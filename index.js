@@ -1,44 +1,7 @@
 /**
- * Follow these steps to configure the webhook in Slack:
+ * Lambda function that will send a slack notification to the provided slack channel
  *
- *   1. Navigate to https://<your-team-domain>.slack.com/services/new
- *
- *   2. Search for and select "Incoming WebHooks".
- *
- *   3. Choose the default channel where messages will be sent and click "Add Incoming WebHooks Integration".
- *
- *   4. Copy the webhook URL from the setup instructions and use it in the next section.
- *
- *
- * To encrypt your secrets use the following steps:
- *
- *  1. Create or use an existing KMS Key - http://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
- *
- *  2. Click the "Enable Encryption Helpers" checkbox
- *
- *  3. Paste <SLACK_HOOK_URL> into the kmsEncryptedHookUrl environment variable and click encrypt
- *
- *  Note: You must exclude the protocol from the URL (e.g. "hooks.slack.com/services/abc123").
- *
- *  4. Give your function's role permission for the kms:Decrypt action.
- *      Example:
-
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "Stmt1443036478000",
-            "Effect": "Allow",
-            "Action": [
-                "kms:Decrypt"
-            ],
-            "Resource": [
-                "<your KMS key ARN>"
-            ]
-        }
-    ]
-}
-
+ * Author: Kelvin Nguyen
  */
 
 const AWS = require('aws-sdk')
@@ -46,6 +9,7 @@ const url = require('url')
 const https = require('https')
 
 const notificationSources = require('./configs/notificationSources')
+const cloudwatchAlertHandler = require('./handlers/cloudwatchAlertHandler')
 const scheduledEventHandler = require('./handlers/scheduledEventHandler')
 const ecsTaskHandler = require('./handlers/ecsTaskHandler')
 const defaultHandler = require('./handlers/defaultHandler')
@@ -61,6 +25,7 @@ let hookUrl = ''
 const DEFAULT_SLACK_MSG = {
   channel: slackChannel
 }
+const CLOUDWATCH_ALARM = 'CLOUDWATCH_ALARM'
 
 function postMessage(message, callback) {
   const body = JSON.stringify(message)
@@ -98,24 +63,27 @@ function createSlackMessage (event) {
   // The message always comes in as a JSON string
   const timestamp = (new Date(record.Sns.Timestamp)).getTime() / 1000
   const snsMessage = JSON.parse(record.Sns.Message)
-  const eventSource = snsMessage['source']
 
-  const ecsSource = notificationSources.ECS
-  const scheduledEventSource = notificationSources.SCHEDULED_EVENT
+  // Checks if the event source is a cloudwatch alarm. If not, not, then default to interpretting the snsMessage source
+  const eventSource = (record.Sns.Subject.indexOf(CLOUDWATCH_ALARM) > -1) ? CLOUDWATCH_ALARM : snsMessage['source']
   let slackMessage = null
 
   switch (eventSource) {
-    case ecsSource:
+    case notificationSources.ECS:
       console.log('Processing ecs event')
       slackMessage = ecsTaskHandler(snsMessage, timestamp)
       break
-    case scheduledEventSource:
+    case notificationSources.SCHEDULED_EVENT:
       console.log('Processing scheduled event')
-      slackMessage = scheduledEventHandler(eventRecord, timestamp)
-      breal
+      slackMessage = scheduledEventHandler(snsMessage, timestamp)
+      break
+    case ALARM_SOURCE:
+      console.log('Processing cloudwatch alarm event')
+      slackMessage = cloudwatchAlertHandler(snsMessage, timestamp)
+      break
     default:
       console.log('Processing default message event')
-      slackMessage = defaultHandler(eventRecord, timestamp)
+      slackMessage = defaultHandler(event, timestamp)
   }
 
   return {

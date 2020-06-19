@@ -1,0 +1,25 @@
+{
+  "AlarmName": "ExampleAlarmName",
+  "AlarmDescription": "Alarm example description",
+  "AWSAccountId": "0000000",
+  "NewStateValue": "ALARM",
+  "NewStateReason": "Threshold Crossed: 1 out of the last 1 datapoints [1.0 (19/06/20 00:27:00)] was greater than the threshold (0.0) (minimum 1 datapoint for OK -> ALARM transition).",
+  "StateChangeTime": "2018-09-06T08:02:58.524Z",
+  "Region": "US West (Oregon)",
+  "AlarmArn": "arn:aws:cloudwatch:us-west-2:00000000:alarm:example-alarm",
+  "OldStateValue": "INSUFFICIENT_DATA",
+  "Trigger": {
+    "MetricName": "Errors",
+    "Namespace": "AWS/Lambda",
+    "StatisticType": "Statistic",
+    "Statistic": "MINIMUM",
+    "Unit": null,
+    "Dimensions": [ ],
+    "Period": 300,
+    "EvaluationPeriods": 1,
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Threshold": 0,
+    "TreatMissingData": "",
+    "EvaluateLowSampleCountPercentile": ""
+  }
+}

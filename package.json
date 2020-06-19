@@ -1,13 +1,10 @@
 {
-  "name": "lambda-slack-notifications",
+  "name": "aws-lambda-slack-notifications",
   "version": "0.0.1",
-  "description": "Slack notifications on AWS Lambda, SNS, and Cloudwatch",
+  "description": "Slack notifications through AWS Lambda + SNS",
   "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "package": "yarn install && mkdir -p dist && zip -r dist/aws-lambda-slack-notifications.zip configs handlers index.js package.json yarn.lock README.md"
   },
   "repository": {
     "type": "git",

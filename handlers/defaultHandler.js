@@ -1,7 +1,6 @@
-module.exports = (event) => {
+module.exports = (event, timestamp) => {
   const record = event.Records[0]
   const subject = record.Sns.Subject
-  const timestamp = new Date(record.Sns.Timestamp).getTime() / 1000
   const message = record.Sns.Message
   const newState = message.NewStateValue
   let color = 'warning'
