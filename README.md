@@ -26,6 +26,13 @@ All other events will be directed through our default message handler. You can r
 3. Set up an SNS topic and have your lambda function subscribe to it
 4. Wherever you decide to setup events (e.g. Cloudwatch rules or alerts), specify your created SNS topic as a triggered event. This will automatically send the event data through SNS and into the lambda function to be interpretted.
 
+## Environment variables
+To run this lambda function, the following environment variables will need to be set and provided by Lambda:
+
+- `slackChannel` | The slack channel in which to post the message
+- `unencryptedHookUrl` | The slack hook url. Set this if you don't plan to use the encrypted hook url.
+- `kmsEncryptedHookUrl` | The base-64 encoded, encrypted key (CiphertextBlob) used to set the hook url. You don't need to set this if you choose to use an unencryptedHookUrl.
+
 ## Configuring webhook in Slack
 
 Follow these steps to configure the webhook in Slack:
