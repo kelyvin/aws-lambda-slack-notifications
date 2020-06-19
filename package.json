@@ -1,6 +1,6 @@
 {
   "name": "aws-lambda-slack-notifications",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Slack notifications through AWS Lambda + SNS",
   "main": "index.js",
   "scripts": {
