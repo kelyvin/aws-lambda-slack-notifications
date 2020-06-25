@@ -63,9 +63,11 @@ function createSlackMessage (event) {
   // The message always comes in as a JSON string
   const timestamp = (new Date(record.Sns.Timestamp)).getTime() / 1000
   const snsMessage = JSON.parse(record.Sns.Message)
+  const snsSubject = record.Sns.Subject || ''
 
   // Checks if the event source is a cloudwatch alarm. If not, not, then default to interpretting the snsMessage source
-  const eventSource = (record.Sns.Subject.indexOf(CLOUDWATCH_ALARM) > -1) ? CLOUDWATCH_ALARM : snsMessage['source']
+  const eventSource = (snsSubject.indexOf(CLOUDWATCH_ALARM) > -1) ? CLOUDWATCH_ALARM : snsMessage['source']
+
   let slackMessage = null
 
   switch (eventSource) {
