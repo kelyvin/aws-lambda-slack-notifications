@@ -2,7 +2,7 @@ module.exports = (snsMessage, timestamp) => {
   const { resources, region, detail } = snsMessage
   const subject = snsMessage['detail-type']
   const eventArn = (resources.length > 0) ? resources[0] : ''
-  const ruleName = eventArn.split('/').pop
+  const ruleName = eventArn.split('/').pop()
   let color = 'good'
 
   if (Object.keys(detail).length === 0) {
@@ -20,7 +20,7 @@ module.exports = (snsMessage, timestamp) => {
     }
   }
 
-  const { name = '', env = '', lambdaFuncName = ''. logGroup = '' } = detail
+  const { name = '', env = '', lambdaFuncName = '', logGroup = '' } = detail
   const link = `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${logGroup}`
 
   return {
@@ -51,6 +51,5 @@ module.exports = (snsMessage, timestamp) => {
       'ts': timestamp
     }]
   }
-
 }
 
