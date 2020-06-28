@@ -1,11 +1,13 @@
 {
   "env": {
-    "es6": true,
     "node": true
   },
-  "extends": "eslint:recommended",
+  "extends": [
+    "eslint:recommended",
+    "plugin:node/recommended"
+  ],
   "parserOptions": {
-    "ecmaVersion": 2017
+    "ecmaVersion": 2019
   },
   "rules": {
     "indent": [
@@ -21,7 +23,8 @@
       "single"
     ],
     "semi": [
-      "never"
+      "error",
+      "always"
     ]
   }
 }
