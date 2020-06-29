@@ -4,7 +4,7 @@ module.exports = (snsMessage, timestamp) => {
   const alarmName = snsMessage.AlarmName;
   const newState = snsMessage.NewStateValue;
   const alarmDescription = snsMessage.AlarmDescription;
-  const alarmReason = snsMessage.NewStateReason;
+  // const alarmReason = snsMessage.NewStateReason;
   let color = 'warning';
 
   switch (newState) {

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "package": "yarn install && mkdir -p dist && zip -r dist/aws-lambda-slack-notifications.zip configs handlers index.js package.json yarn.lock README.md",
-    "lint": "npx eslint"
+    "lint": "npx eslint **/*.js"
   },
   "repository": {
     "type": "git",
@@ -37,7 +37,6 @@
     "url": "^0.11.0"
   },
   "devDependencies": {
-    "eslint": "^7.3.1",
-    "eslint-plugin-node": "^11.1.0"
+    "eslint": "^7.3.1"
   }
 }

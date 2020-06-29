@@ -71,21 +71,21 @@ function createSlackMessage (event) {
   let slackMessage = null;
 
   switch (eventSource) {
-  case notificationSources.ECS:
-    console.log('Processing ecs event');
-    slackMessage = ecsTaskHandler(snsMessage, timestamp);
-    break;
-  case notificationSources.SCHEDULED_EVENT:
-    console.log('Processing scheduled event');
-    slackMessage = scheduledEventHandler(snsMessage, timestamp);
-    break;
-  case ALARM_SOURCE:
-    console.log('Processing cloudwatch alarm event');
-    slackMessage = cloudwatchAlertHandler(snsMessage, timestamp);
-    break;
-  default:
-    console.log('Processing default message event');
-    slackMessage = defaultHandler(event, timestamp);
+    case notificationSources.ECS:
+      console.log('Processing ecs event');
+      slackMessage = ecsTaskHandler(snsMessage, timestamp);
+      break;
+    case notificationSources.SCHEDULED_EVENT:
+      console.log('Processing scheduled event');
+      slackMessage = scheduledEventHandler(snsMessage, timestamp);
+      break;
+    case CLOUDWATCH_ALARM:
+      console.log('Processing cloudwatch alarm event');
+      slackMessage = cloudwatchAlertHandler(snsMessage, timestamp);
+      break;
+    default:
+      console.log('Processing default message event');
+      slackMessage = defaultHandler(event, timestamp);
   }
 
   return {
