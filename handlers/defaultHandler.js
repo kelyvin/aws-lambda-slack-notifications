@@ -19,12 +19,16 @@ module.exports = (event, timestamp) => {
   // Add all of the values from the event message to the Slack message description
   let description = '';
 
-  for (let key in message) {
-    let renderedMessage = typeof message[key] === 'object' ?
-      JSON.stringify(message[key]) :
-      message[key];
-
-    description = `${description}\n${key}: ${renderedMessage}`;
+  if (Array.isArray(message)) {
+    for (let key in message) {
+      let renderedMessage = typeof message[key] === 'object' ?
+        JSON.stringify(message[key]) :
+        message[key];
+  
+      description = `${description}\n${key}: ${renderedMessage}`;
+    }
+  } else {
+    description = message;
   }
 
   return {
